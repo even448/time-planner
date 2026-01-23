@@ -87,8 +87,8 @@
 
 1. **克隆项目**
 ```bash
-git clone https://github.com/your-username/time-planner-pwa.git
-cd time-planner-pwa
+git clone https://github.com/even448/time-planner.git
+cd time-planner
 ```
 
 2. **安装依赖**
@@ -221,7 +221,7 @@ time-planner-pwa/
 
 ## 👨‍💻 作者
 
-[@your-username](https://github.com/your-username)
+[@even448](https://github.com/even448)
 
 ## 🙏 致谢
 

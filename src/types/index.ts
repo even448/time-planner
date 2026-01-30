@@ -82,7 +82,7 @@ export interface AppState {
   archiveCountdown: (id: string) => void;
   
   // Todo Actions
-  addTodo: (todo: Omit<Todo, 'id' | 'createdAt' | 'completed' | 'subtasks' | 'history' | 'isImportant' | 'isUrgent' | 'type' | 'streak' | 'lastCompletedDate' | 'isMyDay' | 'addedToMyDayDate'>) => void;
+  addTodo: (todo: Omit<Todo, 'id' | 'createdAt' | 'completed' | 'subtasks' | 'history' | 'isImportant' | 'isUrgent' | 'streak' | 'lastCompletedDate' | 'isMyDay' | 'addedToMyDayDate'>) => void;
   toggleTodo: (id: string) => void;
   deleteTodo: (id: string) => void;
   updateTodoMatrix: (id: string, isImportant: boolean, isUrgent: boolean) => void;
@@ -90,6 +90,7 @@ export interface AppState {
   addSubtask: (todoId: string, title: string) => void;
   toggleSubtask: (todoId: string, subtaskId: string) => void;
   deleteSubtask: (todoId: string, subtaskId: string) => void;
+  reorderSubtasks: (todoId: string, newOrder: any[]) => void;
   addTodoHistory: (todoId: string, tag?: string) => void;
   checkAndResetHabits: () => void;
   

@@ -2,6 +2,11 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { AppState, Countdown, Todo, FocusSession, FocusTask } from '../types';
 
+// 生成唯一ID的函数
+const generateId = (): string => {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2, 9) + Math.random().toString(36).substr(2, 9);
+};
+
 const useAppStore = create<AppState>()(
   persist(
     (set) => ({
@@ -24,7 +29,7 @@ const useAppStore = create<AppState>()(
           ...state.countdowns,
           {
             ...countdown,
-            id: Date.now().toString(),
+            id: generateId(),
             createdAt: new Date().toISOString(),
             archived: false,
           },
@@ -47,7 +52,7 @@ const useAppStore = create<AppState>()(
           ...state.todos,
           {
             ...todo,
-            id: Date.now().toString(),
+            id: generateId(),
             createdAt: new Date().toISOString(),
             completed: false,
             subtasks: [],
@@ -55,11 +60,11 @@ const useAppStore = create<AppState>()(
             // Default values for new fields
             isImportant: false,
             isUrgent: false,
-            type: 'task',
+            type: todo.type || 'task',
             streak: 0,
             lastCompletedDate: null,
-            isMyDay: false,
-            addedToMyDayDate: null,
+            isMyDay: (todo as any).isMyDay ?? false,
+            addedToMyDayDate: (todo as any).isMyDay ? new Date().toISOString().split('T')[0] : null,
           },
         ],
       })),
@@ -155,7 +160,7 @@ const useAppStore = create<AppState>()(
                 ...t,
                 subtasks: [
                   ...t.subtasks,
-                  { id: Date.now().toString(), title, completed: false },
+                  { id: generateId(), title, completed: false },
                 ],
               }
             : t
@@ -181,6 +186,17 @@ const useAppStore = create<AppState>()(
             ? {
                 ...t,
                 subtasks: t.subtasks.filter((s) => s.id !== subtaskId),
+              }
+            : t
+        ),
+      })),
+
+      reorderSubtasks: (todoId, newOrder) => set((state) => ({
+        todos: state.todos.map((t) =>
+          t.id === todoId
+            ? {
+                ...t,
+                subtasks: newOrder,
               }
             : t
         ),
@@ -221,7 +237,7 @@ const useAppStore = create<AppState>()(
       addFocusTask: (title) => set((state) => ({
         focusTasks: [
           ...state.focusTasks,
-          { id: Date.now().toString(), title },
+          { id: generateId(), title },
         ],
       })),
 
@@ -234,7 +250,7 @@ const useAppStore = create<AppState>()(
           ...state.focusSessions,
           {
             ...session,
-            id: Date.now().toString(),
+            id: generateId(),
             createdAt: new Date().toISOString(),
           },
         ],

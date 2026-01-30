@@ -87,7 +87,7 @@
 
 1. **克隆项目**
 ```bash
-git clone https://github.com/your-username/time-planner.git
+git clone https://github.com/even448/time-planner.git
 cd time-planner
 ```
 

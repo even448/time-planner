@@ -1,7 +1,7 @@
 import { ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import { useLocation, Link } from 'react-router-dom';
-import { Clock, ListTodo, Timer, BarChart3, Sun, Moon } from 'lucide-react';
+import { Clock, List, Timer, BarChart3, Sun, Moon, Settings } from 'lucide-react';
 import { Button } from '@nextui-org/react';
 import useAppStore from '../store/useAppStore';
 
@@ -11,42 +11,21 @@ interface LayoutProps {
 
 export default function Layout({ children }: LayoutProps) {
   const location = useLocation();
-  const { settings, toggleTheme } = useAppStore();
-  
-  const isDark = settings.theme === 'dark';
   
   // 导航项配置
   const navItems = [
     { path: '/', icon: Clock, label: '倒数日', color: 'from-orange-500 to-amber-500' },
-    { path: '/todo', icon: ListTodo, label: '待办', color: 'from-red-500 to-rose-500' },
+    { path: '/todo', icon: List, label: '待办', color: 'from-red-500 to-rose-500' },
     { path: '/focus', icon: Timer, label: '专注', color: 'from-emerald-500 to-green-500' },
     { path: '/stats', icon: BarChart3, label: '统计', color: 'from-blue-500 to-purple-500' },
+    { path: '/settings', icon: Settings, label: '设置', color: 'from-gray-500 to-gray-700' },
   ];
 
   return (
     <div className="h-screen overflow-hidden flex flex-col relative">
-      {/* Header - Glassmorphism */}
-      <header className="h-16 glass border-b border-stone-200/50 dark:border-stone-800/50 z-20 shrink-0 sticky top-0">
-        <div className="w-full max-w-[1200px] mx-auto px-6 h-full flex items-center justify-between">
-          <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
-            时光记录
-          </h1>
-          
-          {/* 主题切换按钮 */}
-          <Button
-            isIconOnly
-            variant="light"
-            onPress={toggleTheme}
-            className="text-stone-600 dark:text-stone-300"
-          >
-            {isDark ? <Sun size={20} /> : <Moon size={20} />}
-          </Button>
-        </div>
-      </header>
-
       {/* 主内容区域 */}
       <main className="flex-1 overflow-auto relative">
-        <div className="w-full max-w-[1200px] mx-auto px-4 py-6 pb-28">
+        <div className="w-full max-w-[1200px] mx-auto px-4 py-4 pb-28">
           {children}
         </div>
       </main>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button, ButtonGroup, Select, SelectItem } from '@nextui-org/react';
@@ -88,9 +88,9 @@ export default function FocusTimer() {
     setIsZenMode(!isZenMode);
   };
 
-  const handleExitZenMode = () => {
+  const handleExitZenMode = useCallback(() => {
     setIsZenMode(false);
-  };
+  }, []);
 
   // 进度百分比
   const progress = mode === 'pomodoro' && timer.totalTime > 0

@@ -59,6 +59,7 @@ export default function ZenModeView({
 
       // 监听全屏退出
       const handleFullscreenChange = () => {
+        // 只有当真正退出全屏时才调用 onExit
         if (!document.fullscreenElement) {
           onExit();
         }
@@ -68,7 +69,8 @@ export default function ZenModeView({
 
       return () => {
         document.removeEventListener('fullscreenchange', handleFullscreenChange);
-        // 退出全屏
+        // 只有当组件真正卸载时才退出全屏，而不是当依赖项变化时
+        // 这样可以避免因为依赖项变化导致的意外退出
         if (document.fullscreenElement) {
           document.exitFullscreen().catch(() => {
             // 忽略错误
@@ -76,7 +78,7 @@ export default function ZenModeView({
         }
       };
     }
-  }, [isActive, onExit]);
+  }, [isActive]);
 
   // 处理 ESC 键退出
   useEffect(() => {

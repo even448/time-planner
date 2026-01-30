@@ -4,11 +4,13 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardBody, Checkbox, Button, Progress, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Input } from '@nextui-org/react';
 import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
 import 'react-circular-progressbar/dist/styles.css';
-import { Trash2, Plus, Calendar, Tag, Timer, Sun, Flame } from 'lucide-react';
+import { Trash2, Plus, Calendar, Tag, Timer, Sun, Flame, GripVertical, Edit3 } from 'lucide-react';
 import { format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 import { Todo } from '../types';
 import useAppStore from '../store/useAppStore';
+import { DndContext, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
 
 interface TodoItemProps {
   todo: Todo;
@@ -23,18 +25,45 @@ export default function TodoItem({ todo, showPartition = true }: TodoItemProps) 
     addSubtask, 
     toggleSubtask, 
     deleteSubtask, 
+    reorderSubtasks,
     addTodoHistory,
-    toggleMyDay 
+    toggleMyDay
   } = useAppStore();
   
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [newSubtask, setNewSubtask] = useState('');
   const [historyTag, setHistoryTag] = useState('');
+  const [isManaging, setIsManaging] = useState(false);
+  const [isSubtasksExpanded, setIsSubtasksExpanded] = useState(false);
+
+  // DnD Kit sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    })
+  );
+
+  // Handle drag end
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (active.id !== over?.id) {
+      const oldIndex = todo.subtasks.findIndex((s) => s.id === active.id);
+      const newIndex = todo.subtasks.findIndex((s) => s.id === over?.id);
+
+      if (oldIndex !== -1 && newIndex !== -1) {
+        const newOrder = arrayMove(todo.subtasks, oldIndex, newIndex);
+        reorderSubtasks(todo.id, newOrder);
+      }
+    }
+  };
 
   // 计算完成进度
   const completedSubtasks = todo.subtasks.filter((s) => s.completed).length;
   const totalSubtasks = todo.subtasks.length;
-  const progress = totalSubtasks > 0 ? (completedSubtasks / totalSubtasks) * 100 : 0;
+  const progress = todo.completed ? 100 : (totalSubtasks > 0 ? (completedSubtasks / totalSubtasks) * 100 : 0);
 
   // 计算历史完成率
   const completedHistory = todo.history.filter((h) => h.completed).length;
@@ -63,6 +92,92 @@ export default function TodoItem({ todo, showPartition = true }: TodoItemProps) 
   const handleStartFocus = () => {
     navigate('/focus', { state: { taskId: todo.id, taskName: todo.title } });
   };
+
+  const handleCloseDetail = () => {
+    setIsDetailOpen(false);
+  };
+
+// SortableItem 组件，支持拖拽排序
+interface SortableItemProps {
+  id: string;
+  todoId: string;
+  subtask: any;
+  isManaging: boolean;
+  onToggle: () => void;
+  onDelete: () => void;
+}
+
+function SortableItem({ id, todoId, subtask, isManaging, onToggle, onDelete }: SortableItemProps) {
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
+    id,
+  });
+
+  const style = {
+    transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
+    transition,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      className={`group flex items-center justify-between p-3 rounded-xl border border-stone-200 dark:border-stone-700 transition-all duration-200 ${
+        subtask.completed
+          ? 'bg-stone-50 dark:bg-stone-800/50'
+          : 'bg-white dark:bg-stone-800 hover:border-stone-300 dark:hover:border-stone-600'
+      }`}
+    >
+      <div className="flex items-center flex-1 min-w-0">
+        {isManaging && (
+          <button
+            {...listeners}
+            className="mr-3 text-stone-400 cursor-grab active:cursor-grabbing hover:text-stone-600 dark:hover:text-stone-200 transition-colors"
+          >
+            <GripVertical size={18} />
+          </button>
+        )}
+        <div className={`flex-shrink-0 w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-200 ${
+          subtask.completed
+            ? 'bg-green-500 border-green-500'
+            : 'border-stone-300 dark:border-stone-600 group-hover:border-green-400'
+        }`}>
+          {subtask.completed && (
+            <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+            </svg>
+          )}
+        </div>
+        <button
+          onClick={onToggle}
+          className="flex-1 min-w-0 text-left ml-3"
+        >
+          <span
+            className={`text-sm truncate block ${
+              subtask.completed
+                ? 'line-through text-stone-400'
+                : 'text-stone-700 dark:text-stone-200'
+            }`}
+          >
+            {subtask.title}
+          </span>
+        </button>
+      </div>
+      {isManaging && (
+        <Button
+          isIconOnly
+          size="sm"
+          variant="light"
+          color="danger"
+          className="opacity-0 group-hover:opacity-100 transition-opacity ml-2"
+          onPress={onDelete}
+        >
+          <Trash2 size={16} />
+        </Button>
+      )}
+    </div>
+  );
+}
 
   return (
     <>
@@ -184,29 +299,96 @@ export default function TodoItem({ todo, showPartition = true }: TodoItemProps) 
 
                 {/* 子任务预览 */}
                 {todo.subtasks.length > 0 && (
-                  <div className="mt-2 space-y-1">
-                    {todo.subtasks.slice(0, 2).map((subtask) => (
-                      <div
-                        key={subtask.id}
-                        className="text-xs text-stone-500 dark:text-stone-400 flex items-center"
-                      >
-                        <span
-                          className={`mr-1 ${
-                            subtask.completed ? 'text-green-500' : 'text-stone-300'
-                          }`}
-                        >
-                          {subtask.completed ? '✓' : '○'}
-                        </span>
-                        <span className={subtask.completed ? 'line-through' : ''}>
-                          {subtask.title}
+                  <div className="mt-3 bg-stone-50 dark:bg-stone-800/50 rounded-xl p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-1">
+                          <span className={`w-1.5 h-1.5 rounded-full ${completedSubtasks === totalSubtasks ? 'bg-green-500' : 'bg-orange-400'}`} />
+                          <span className="text-xs font-medium text-stone-600 dark:text-stone-300">
+                            子任务
+                          </span>
+                        </div>
+                        <span className="text-xs text-stone-400 bg-stone-200 dark:bg-stone-700 px-1.5 py-0.5 rounded">
+                          {completedSubtasks}/{totalSubtasks}
                         </span>
                       </div>
-                    ))}
-                    {todo.subtasks.length > 2 && (
-                      <p className="text-xs text-stone-400">
-                        +{todo.subtasks.length - 2} 更多...
-                      </p>
-                    )}
+                      <div className="flex items-center space-x-2">
+                        <div className="w-16 h-1.5 bg-stone-200 dark:bg-stone-700 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all duration-300 ${
+                              completedSubtasks === totalSubtasks ? 'bg-green-500' : 'bg-orange-400'
+                            }`}
+                            style={{ width: `${(completedSubtasks / totalSubtasks) * 100}%` }}
+                          />
+                        </div>
+                        {todo.subtasks.length > 2 && (
+                          <button
+                            onClick={() => setIsSubtasksExpanded(!isSubtasksExpanded)}
+                            className="text-xs text-stone-500 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200 transition-colors flex items-center"
+                          >
+                            <span className={`transition-transform duration-200 ${
+                              isSubtasksExpanded ? 'rotate-180' : ''
+                            }`}>
+                              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                              </svg>
+                            </span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      {(isSubtasksExpanded ? todo.subtasks : todo.subtasks.slice(0, 2)).map((subtask) => (
+                        <div
+                          key={subtask.id}
+                          className="flex items-center space-x-2 text-sm cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-700/50 p-1 rounded-lg transition-colors"
+                          onClick={() => toggleSubtask(todo.id, subtask.id)}
+                        >
+                          <span
+                            className={`flex-shrink-0 w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${
+                              subtask.completed
+                                ? 'bg-green-500 border-green-500 text-white'
+                                : 'border-stone-300 dark:border-stone-600 hover:border-green-400'
+                            }`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleSubtask(todo.id, subtask.id);
+                            }}
+                          >
+                            {subtask.completed && (
+                              <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                              </svg>
+                            )}
+                          </span>
+                          <span
+                            className={`truncate flex-1 ${
+                              subtask.completed
+                                ? 'line-through text-stone-400'
+                                : 'text-stone-700 dark:text-stone-200'
+                            }`}
+                          >
+                            {subtask.title}
+                          </span>
+                        </div>
+                      ))}
+                      {!isSubtasksExpanded && todo.subtasks.length > 2 && (
+                        <p 
+                          className="text-xs text-stone-400 pl-6 cursor-pointer hover:text-stone-600 dark:hover:text-stone-300 transition-colors"
+                          onClick={() => setIsSubtasksExpanded(!isSubtasksExpanded)}
+                        >
+                          +{todo.subtasks.length - 2} 项未完成
+                        </p>
+                      )}
+                      {isSubtasksExpanded && (
+                        <p 
+                          className="text-xs text-stone-400 pl-6 cursor-pointer hover:text-stone-600 dark:hover:text-stone-300 transition-colors"
+                          onClick={() => setIsSubtasksExpanded(!isSubtasksExpanded)}
+                        >
+                          收起子任务
+                        </p>
+                      )}
+                    </div>
                   </div>
                 )}
 
@@ -250,41 +432,39 @@ export default function TodoItem({ todo, showPartition = true }: TodoItemProps) 
           <ModalBody>
             {/* 子任务 */}
             <div className="mb-6">
-              <h4 className="font-semibold mb-3 flex items-center">
-                <span>子任务</span>
-                <span className="ml-2 text-xs text-stone-400">
-                  ({completedSubtasks}/{totalSubtasks})
-                </span>
-              </h4>
-              <div className="space-y-2">
-                {todo.subtasks.map((subtask) => (
-                  <div
-                    key={subtask.id}
-                    className="flex items-center justify-between p-2 rounded-lg bg-stone-50 dark:bg-stone-900"
-                  >
-                    <Checkbox
-                      isSelected={subtask.completed}
-                      onValueChange={() => toggleSubtask(todo.id, subtask.id)}
-                      color="success"
-                    >
-                      <span
-                        className={subtask.completed ? 'line-through text-stone-400' : ''}
-                      >
-                        {subtask.title}
-                      </span>
-                    </Checkbox>
-                    <Button
-                      isIconOnly
-                      size="sm"
-                      variant="light"
-                      color="danger"
-                      onPress={() => deleteSubtask(todo.id, subtask.id)}
-                    >
-                      <Trash2 size={14} />
-                    </Button>
-                  </div>
-                ))}
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="font-semibold flex items-center">
+                  <span>子任务</span>
+                  <span className="ml-2 text-xs text-stone-400">
+                    ({completedSubtasks}/{totalSubtasks})
+                  </span>
+                </h4>
+                <Button
+                  size="sm"
+                  variant="light"
+                  onPress={() => setIsManaging(!isManaging)}
+                  startContent={isManaging ? <Edit3 size={16} /> : <Edit3 size={16} />}
+                >
+                  {isManaging ? '完成管理' : '管理'}
+                </Button>
               </div>
+              <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+                <SortableContext items={todo.subtasks.map((s) => s.id)} strategy={verticalListSortingStrategy}>
+                  <div className="space-y-2">
+                    {todo.subtasks.map((subtask) => (
+                      <SortableItem
+                        key={subtask.id}
+                        id={subtask.id}
+                        todoId={todo.id}
+                        subtask={subtask}
+                        isManaging={isManaging}
+                        onToggle={() => toggleSubtask(todo.id, subtask.id)}
+                        onDelete={() => deleteSubtask(todo.id, subtask.id)}
+                      />
+                    ))}
+                  </div>
+                </SortableContext>
+              </DndContext>
               <div className="flex items-center space-x-2 mt-3">
                 <Input
                   placeholder="添加子任务..."
@@ -355,7 +535,7 @@ export default function TodoItem({ todo, showPartition = true }: TodoItemProps) 
             </div>
           </ModalBody>
           <ModalFooter>
-            <Button variant="light" onPress={() => setIsDetailOpen(false)}>
+            <Button variant="light" onPress={handleCloseDetail}>
               关闭
             </Button>
           </ModalFooter>

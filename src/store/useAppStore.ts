@@ -46,6 +46,12 @@ const useAppStore = create<AppState>()(
         ),
       })),
 
+      unarchiveCountdown: (id) => set((state) => ({
+        countdowns: state.countdowns.map((c) =>
+          c.id === id ? { ...c, archived: false } : c
+        ),
+      })),
+
       // ==================== Todo Actions ====================
       addTodo: (todo) => set((state) => ({
         todos: [
@@ -65,6 +71,7 @@ const useAppStore = create<AppState>()(
             lastCompletedDate: null,
             isMyDay: (todo as any).isMyDay ?? false,
             addedToMyDayDate: (todo as any).isMyDay ? new Date().toISOString().split('T')[0] : null,
+            dueDate: (todo as any).dueDate ?? null,
           },
         ],
       })),
@@ -310,6 +317,7 @@ const useAppStore = create<AppState>()(
             lastCompletedDate: todo.lastCompletedDate ?? null,
             isMyDay: todo.isMyDay ?? false,
             addedToMyDayDate: todo.addedToMyDayDate ?? null,
+            dueDate: todo.dueDate ?? null,
           }));
         }
         return persistedState;

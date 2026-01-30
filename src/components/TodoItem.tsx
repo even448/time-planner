@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardBody, Checkbox, Button, Progress, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Input } from '@nextui-org/react';
@@ -11,13 +11,16 @@ import { Todo } from '../types';
 import useAppStore from '../store/useAppStore';
 import { DndContext, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
+import confetti from '../utils/confetti';
 
 interface TodoItemProps {
   todo: Todo;
   showPartition?: boolean;
+  onComplete?: () => void;
+  isCompleting?: boolean;
 }
 
-export default function TodoItem({ todo, showPartition = true }: TodoItemProps) {
+export default function TodoItem({ todo, showPartition = true, onComplete, isCompleting }: TodoItemProps) {
   const navigate = useNavigate();
   const { 
     toggleTodo, 
@@ -35,6 +38,7 @@ export default function TodoItem({ todo, showPartition = true }: TodoItemProps) 
   const [historyTag, setHistoryTag] = useState('');
   const [isManaging, setIsManaging] = useState(false);
   const [isSubtasksExpanded, setIsSubtasksExpanded] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
 
   // DnD Kit sensors
   const sensors = useSensors(
@@ -77,10 +81,34 @@ export default function TodoItem({ todo, showPartition = true }: TodoItemProps) 
     high: 'text-red-500',
   }[todo.priority];
 
+  const formattedDueDate = todo.dueDate
+    ? format(new Date(todo.dueDate), 'yyyy-MM-dd HH:mm', { locale: zhCN })
+    : null;
+
   const handleAddSubtask = () => {
     if (newSubtask.trim()) {
       addSubtask(todo.id, newSubtask);
       setNewSubtask('');
+    }
+  };
+
+  const handleToggle = () => {
+    if (!todo.completed) {
+      if (cardRef.current) {
+        const rect = cardRef.current.getBoundingClientRect();
+        confetti({
+          particleCount: 50,
+          spread: 70,
+          origin: {
+            x: (rect.left + rect.width / 2) / window.innerWidth,
+            y: (rect.top + rect.height / 2) / window.innerHeight,
+          },
+        });
+      }
+      toggleTodo(todo.id);
+      onComplete?.();
+    } else {
+      toggleTodo(todo.id);
     }
   };
 
@@ -183,11 +211,15 @@ function SortableItem({ id, todoId, subtask, isManaging, onToggle, onDelete }: S
     <>
       <motion.div
         initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
+        animate={{ opacity: isCompleting ? 0 : 1, y: isCompleting ? -8 : 0, scale: isCompleting ? 0.96 : 1 }}
         exit={{ opacity: 0, x: -50 }}
         whileTap={{ scale: 0.98 }}
+        transition={{ duration: 0.6, delay: isCompleting ? 2.4 : 0 }}
       >
-        <Card className={`modern-card mb-3 ${todo.isMyDay ? 'ring-2 ring-amber-400 dark:ring-amber-500' : ''}`}>
+        <Card
+          ref={cardRef}
+          className={`modern-card mb-3 ${todo.isMyDay ? 'ring-2 ring-amber-400 dark:ring-amber-500' : ''} ${isCompleting ? 'pointer-events-none' : ''}`}
+        >
           <CardBody className="p-4">
             <div className="flex items-start space-x-3">
               {/* 左侧进度环 */}
@@ -210,7 +242,7 @@ function SortableItem({ id, todoId, subtask, isManaging, onToggle, onDelete }: S
                   <div className="flex items-center space-x-2 flex-1">
                     <Checkbox
                       isSelected={todo.completed}
-                      onValueChange={() => toggleTodo(todo.id)}
+                      onValueChange={handleToggle}
                       color="success"
                       size="lg"
                     />
@@ -247,6 +279,12 @@ function SortableItem({ id, todoId, subtask, isManaging, onToggle, onDelete }: S
                           <span className="text-xs bg-amber-100 dark:bg-amber-900 text-amber-600 dark:text-amber-300 px-2 py-0.5 rounded flex items-center">
                             <Sun size={12} className="mr-1" />
                             我的一天
+                          </span>
+                        )}
+                        {formattedDueDate && (
+                          <span className="text-xs text-stone-400 flex items-center">
+                            <Calendar size={12} className="mr-1" />
+                            截止 {formattedDueDate}
                           </span>
                         )}
                       </div>

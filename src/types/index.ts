@@ -9,6 +9,8 @@ export interface Countdown {
   countUpMode: boolean; // true = 正数计时（纪念日）
   repeat: 'none' | 'yearly' | 'monthly' | 'weekly';
   archived: boolean;
+  theme?: 'birthday' | 'exam' | 'anniversary' | 'travel' | 'custom'; // 主题模板
+  timeUnit?: 'auto' | 'weeks' | 'days' | 'hours' | 'minutes'; // 时间单位
 }
 
 export interface SubTask {
@@ -43,6 +45,8 @@ export interface Todo {
   // My Day
   isMyDay: boolean;
   addedToMyDayDate: string | null; // ISO Date
+  // Due Date
+  dueDate?: string | null;
 }
 
 export interface FocusTask {
@@ -80,6 +84,7 @@ export interface AppState {
   addCountdown: (countdown: Omit<Countdown, 'id' | 'createdAt' | 'archived'>) => void;
   deleteCountdown: (id: string) => void;
   archiveCountdown: (id: string) => void;
+  unarchiveCountdown: (id: string) => void;
   
   // Todo Actions
   addTodo: (todo: Omit<Todo, 'id' | 'createdAt' | 'completed' | 'subtasks' | 'history' | 'isImportant' | 'isUrgent' | 'streak' | 'lastCompletedDate' | 'isMyDay' | 'addedToMyDayDate'>) => void;

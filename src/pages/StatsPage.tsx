@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import { Card, CardBody, CardHeader, Divider } from '@nextui-org/react';
 import {
   LineChart,
   Line,
@@ -38,7 +37,7 @@ import {
   calculateWeeklyStats,
 } from '../utils/statistics';
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
+const COLORS = ['#60a5fa', '#34d399', '#fbbf24', '#fb7185', '#a78bfa', '#82ca9d'];
 
 function StatsPage() {
   const { focusSessions, settings } = useAppStore();
@@ -52,7 +51,6 @@ function StatsPage() {
   const weeklyStats = useMemo(() => calculateWeeklyStats(focusSessions), [focusSessions]);
   const heatmapData = useMemo(() => {
     const data = generateHeatmapData(focusSessions, 365);
-    // 转换为 react-activity-calendar 所需格式
     return data.map(d => ({
       date: d.date,
       count: d.count,
@@ -60,7 +58,6 @@ function StatsPage() {
     }));
   }, [focusSessions]);
 
-  // 准备饼图数据（取前 6 个任务）
   const pieData = useMemo(() => {
     return taskStats.slice(0, 6).map((task) => ({
       name: task.taskTitle,
@@ -68,7 +65,6 @@ function StatsPage() {
     }));
   }, [taskStats]);
 
-  // 准备周统计数据
   const weeklyChartData = useMemo(() => {
     return weeklyStats.days.map((day) => ({
       day: new Date(day.date).toLocaleDateString('zh-CN', { weekday: 'short' }),
@@ -79,202 +75,151 @@ function StatsPage() {
   }, [weeklyStats]);
 
   return (
-    <div className="container mx-auto p-4 space-y-6 max-w-7xl">
-      {/* 页面标题 */}
-      <div className="flex items-center gap-3 mb-6">
-        <BarChart3 className="w-8 h-8 text-primary" />
-        <h1 className="text-3xl font-bold">专注统计与分析</h1>
+    <div className="max-w-7xl mx-auto p-4 space-y-6">
+      <div className="flex items-center gap-3 mb-4">
+        <div className="bg-primary text-white p-3 rounded-2xl shadow-lg">
+          <BarChart3 className="w-5 h-5" />
+        </div>
+        <div>
+          <h1 className="text-3xl font-extrabold">专注统计 · 彩虹面板</h1>
+          <p className="text-sm text-stone-500">圆润 / 卡通 / 轻量阴影</p>
+        </div>
       </div>
 
-      {/* 数据为空提示 */}
       {focusSessions.length === 0 && (
-        <Card>
-          <CardBody>
-            <div className="text-center py-12 text-gray-500">
-              <Clock className="w-16 h-16 mx-auto mb-4 opacity-50" />
-              <p className="text-lg">暂无专注数据</p>
-              <p className="text-sm mt-2">开始你的第一个专注会话吧！</p>
-            </div>
-          </CardBody>
-        </Card>
+        <div className="bg-white dark:bg-zinc-800 rounded-xl shadow-xl border border-zinc-200 dark:border-zinc-700">
+          <div className="p-6 flex flex-col items-center text-center">
+            <Clock className="w-14 h-14 text-primary/70" />
+            <h3 className="text-xl font-bold mt-2">暂无专注数据</h3>
+            <p className="text-sm text-stone-500">开始你的第一个专注会话吧！</p>
+          </div>
+        </div>
       )}
 
       {focusSessions.length > 0 && (
         <>
-          {/* 总体统计卡片 */}
+          {/* 顶部彩带统计 */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* 总时长 */}
-            <Card>
-              <CardBody className="flex flex-row items-center gap-4">
-                <div className="p-3 bg-blue-100 dark:bg-blue-900 rounded-full">
-                  <Clock className="w-6 h-6 text-blue-600 dark:text-blue-300" />
+            {[{
+              label: '总专注时长',
+              value: formatDuration(overallStats.totalDuration),
+              icon: Clock,
+              theme: 'from-sky-400 to-blue-500',
+            }, {
+              label: '总会话数',
+              value: overallStats.totalSessions,
+              icon: Target,
+              theme: 'from-emerald-400 to-green-500',
+            }, {
+              label: '当前连续',
+              value: `${overallStats.currentStreak} 天`,
+              icon: Flame,
+              theme: 'from-amber-300 to-orange-400',
+            }, {
+              label: '最长连续',
+              value: `${overallStats.longestStreak} 天`,
+              icon: Award,
+              theme: 'from-purple-400 to-fuchsia-500',
+            }].map((item) => {
+              const Icon = item.icon;
+              return (
+                <div key={item.label} className="bg-white dark:bg-zinc-800 rounded-xl shadow-xl border border-zinc-200 dark:border-zinc-700">
+                  <div className="p-6 flex flex-row items-center gap-4">
+                    <div className={`p-3 rounded-2xl bg-gradient-to-br ${item.theme} text-white shadow`}> 
+                      <Icon className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase text-stone-500">{item.label}</p>
+                      <p className="text-2xl font-extrabold text-stone-800 dark:text-stone-100">{item.value}</p>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">总专注时长</p>
-                  <p className="text-2xl font-bold">{formatDuration(overallStats.totalDuration)}</p>
-                </div>
-              </CardBody>
-            </Card>
-
-            {/* 总会话数 */}
-            <Card>
-              <CardBody className="flex flex-row items-center gap-4">
-                <div className="p-3 bg-green-100 dark:bg-green-900 rounded-full">
-                  <Target className="w-6 h-6 text-green-600 dark:text-green-300" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">总会话数</p>
-                  <p className="text-2xl font-bold">{overallStats.totalSessions}</p>
-                </div>
-              </CardBody>
-            </Card>
-
-            {/* 当前连续天数 */}
-            <Card>
-              <CardBody className="flex flex-row items-center gap-4">
-                <div className="p-3 bg-orange-100 dark:bg-orange-900 rounded-full">
-                  <Flame className="w-6 h-6 text-orange-600 dark:text-orange-300" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">当前连续</p>
-                  <p className="text-2xl font-bold">{overallStats.currentStreak} 天</p>
-                </div>
-              </CardBody>
-            </Card>
-
-            {/* 最长连续天数 */}
-            <Card>
-              <CardBody className="flex flex-row items-center gap-4">
-                <div className="p-3 bg-purple-100 dark:bg-purple-900 rounded-full">
-                  <Award className="w-6 h-6 text-purple-600 dark:text-purple-300" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">最长连续</p>
-                  <p className="text-2xl font-bold">{overallStats.longestStreak} 天</p>
-                </div>
-              </CardBody>
-            </Card>
+              );
+            })}
           </div>
 
-          {/* 更多统计信息 */}
+          {/* 信息豆腐块 */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card>
-              <CardBody>
-                <p className="text-sm text-gray-600 dark:text-gray-400">平均会话时长</p>
-                <p className="text-xl font-bold mt-1">{formatDuration(overallStats.averageDuration)}</p>
-              </CardBody>
-            </Card>
-
-            <Card>
-              <CardBody>
-                <p className="text-sm text-gray-600 dark:text-gray-400">最喜欢的任务</p>
-                <p className="text-xl font-bold mt-1">{overallStats.favoriteTask}</p>
-              </CardBody>
-            </Card>
-
-            <Card>
-              <CardBody>
-                <p className="text-sm text-gray-600 dark:text-gray-400">最高效时段</p>
-                <p className="text-xl font-bold mt-1">{overallStats.mostProductiveHour}:00</p>
-              </CardBody>
-            </Card>
+            {[{
+              label: '平均会话时长', value: formatDuration(overallStats.averageDuration),
+            }, {
+              label: '最喜欢的任务', value: overallStats.favoriteTask || '—',
+            }, {
+              label: '最高效时段', value: `${overallStats.mostProductiveHour}:00`,
+            }].map((item) => (
+              <div key={item.label} className="bg-white dark:bg-zinc-800 rounded-xl shadow-lg border border-zinc-200 dark:border-zinc-700">
+                <div className="p-6 flex flex-col">
+                  <p className="text-sm text-stone-500">{item.label}</p>
+                  <p className="text-xl font-bold text-stone-800 dark:text-stone-100">{item.value}</p>
+                </div>
+              </div>
+            ))}
           </div>
 
-          {/* 30天趋势图 */}
-          <Card>
-            <CardHeader className="flex gap-3">
-              <TrendingUp className="w-5 h-5" />
-              <div className="flex flex-col">
-                <p className="text-md font-semibold">近 30 天趋势</p>
-                <p className="text-small text-default-500">专注时长与会话数变化</p>
-              </div>
-            </CardHeader>
-            <Divider />
-            <CardBody>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={trendData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis yAxisId="left" />
-                  <YAxis yAxisId="right" orientation="right" />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: isDark ? '#1f2937' : '#fff',
-                      border: isDark ? '1px solid #374151' : '1px solid #e5e7eb',
-                    }}
-                  />
-                  <Legend />
-                  <Line
-                    yAxisId="left"
-                    type="monotone"
-                    dataKey="duration"
-                    stroke="#0088FE"
-                    strokeWidth={2}
-                    name="时长(小时)"
-                    dot={{ r: 3 }}
-                  />
-                  <Line
-                    yAxisId="right"
-                    type="monotone"
-                    dataKey="sessions"
-                    stroke="#82ca9d"
-                    strokeWidth={2}
-                    name="会话数"
-                    dot={{ r: 3 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </CardBody>
-          </Card>
-
-          {/* 本周统计 */}
-          <Card>
-            <CardHeader className="flex gap-3">
-              <Calendar className="w-5 h-5" />
-              <div className="flex flex-col">
-                <p className="text-md font-semibold">本周统计</p>
-                <p className="text-small text-default-500">
-                  本周总计：{formatDuration(weeklyStats.totalDuration)}
-                </p>
-              </div>
-            </CardHeader>
-            <Divider />
-            <CardBody>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={weeklyChartData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="day" />
-                  <YAxis />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: isDark ? '#1f2937' : '#fff',
-                      border: isDark ? '1px solid #374151' : '1px solid #e5e7eb',
-                    }}
-                  />
-                  <Legend />
-                  <Bar dataKey="时长" fill="#0088FE" name="时长(小时)" />
-                  <Bar dataKey="番茄钟" fill="#00C49F" name="番茄钟" />
-                  <Bar dataKey="正计时" fill="#FFBB28" name="正计时" />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardBody>
-          </Card>
-
-          {/* 任务分布和每小时生产力 */}
+          {/* 趋势 & 周报 */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {/* 任务分布饼图 */}
-            <Card>
-              <CardHeader className="flex gap-3">
-                <PieChartIcon className="w-5 h-5" />
-                <div className="flex flex-col">
-                  <p className="text-md font-semibold">任务时间分布</p>
-                  <p className="text-small text-default-500">各任务占比（前6项）</p>
+            <div className="bg-white dark:bg-zinc-800 rounded-xl shadow-xl border border-zinc-200 dark:border-zinc-700">
+              <div className="p-6 flex flex-col">
+                <div className="flex items-center gap-2 mb-2">
+                  <TrendingUp className="w-5 h-5" />
+                  <div>
+                    <p className="font-semibold">近 30 天趋势</p>
+                    <p className="text-xs text-stone-500">时长与会话数</p>
+                  </div>
                 </div>
-              </CardHeader>
-              <Divider />
-              <CardBody>
+                <ResponsiveContainer width="100%" height={260}>
+                  <LineChart data={trendData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis dataKey="date" tick={{ fontSize: 12 }} />
+                    <YAxis yAxisId="left" tick={{ fontSize: 12 }} />
+                    <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 12 }} />
+                    <Tooltip wrapperClassName="glass" />
+                    <Legend />
+                    <Line yAxisId="left" type="monotone" dataKey="duration" stroke="#0ea5e9" strokeWidth={3} dot={{ r: 3 }} name="时长(小时)" />
+                    <Line yAxisId="right" type="monotone" dataKey="sessions" stroke="#22c55e" strokeWidth={3} dot={{ r: 3 }} name="会话数" />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-zinc-800 rounded-xl shadow-xl border border-zinc-200 dark:border-zinc-700">
+              <div className="p-6 flex flex-col">
+                <div className="flex items-center gap-2 mb-2">
+                  <Calendar className="w-5 h-5" />
+                  <div>
+                    <p className="font-semibold">本周统计</p>
+                    <p className="text-xs text-stone-500">本周总计：{formatDuration(weeklyStats.totalDuration)}</p>
+                  </div>
+                </div>
+                <ResponsiveContainer width="100%" height={260}>
+                  <BarChart data={weeklyChartData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis dataKey="day" tick={{ fontSize: 12 }} />
+                    <YAxis tick={{ fontSize: 12 }} />
+                    <Tooltip wrapperClassName="glass" />
+                    <Legend />
+                    <Bar dataKey="时长" fill="#38bdf8" name="时长(小时)" radius={[6, 6, 0, 0]} />
+                    <Bar dataKey="番茄钟" fill="#34d399" name="番茄钟" radius={[6, 6, 0, 0]} />
+                    <Bar dataKey="正计时" fill="#fbbf24" name="正计时" radius={[6, 6, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+
+          {/* 任务分布 & 每小时生产力 */ }
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="bg-white dark:bg-zinc-800 rounded-xl shadow-xl border border-zinc-200 dark:border-zinc-700">
+              <div className="p-6 flex flex-col">
+                <div className="flex items-center gap-2 mb-2">
+                  <PieChartIcon className="w-5 h-5" />
+                  <div>
+                    <p className="font-semibold">任务时间分布</p>
+                    <p className="text-xs text-stone-500">前 6 项占比</p>
+                  </div>
+                </div>
                 {pieData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={300}>
+                  <ResponsiveContainer width="100%" height={260}>
                     <PieChart>
                       <Pie
                         data={pieData}
@@ -282,7 +227,7 @@ function StatsPage() {
                         cy="50%"
                         labelLine={false}
                         label={(entry) => `${entry.name}: ${entry.value.toFixed(1)}h`}
-                        outerRadius={80}
+                        outerRadius={90}
                         fill="#8884d8"
                         dataKey="value"
                       >
@@ -290,103 +235,86 @@ function StatsPage() {
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: isDark ? '#1f2937' : '#fff',
-                          border: isDark ? '1px solid #374151' : '1px solid #e5e7eb',
-                        }}
-                      />
+                      <Tooltip wrapperClassName="glass" />
                     </PieChart>
                   </ResponsiveContainer>
                 ) : (
-                  <div className="text-center py-12 text-gray-500">暂无任务数据</div>
+                  <div className="text-center py-10 text-stone-500">暂无任务数据</div>
                 )}
-              </CardBody>
-            </Card>
+              </div>
+            </div>
 
-            {/* 每小时生产力 */}
-            <Card>
-              <CardHeader className="flex gap-3">
-                <Clock className="w-5 h-5" />
-                <div className="flex flex-col">
-                  <p className="text-md font-semibold">每小时生产力</p>
-                  <p className="text-small text-default-500">24小时专注分布</p>
+            <div className="bg-white dark:bg-zinc-800 rounded-xl shadow-xl border border-zinc-200 dark:border-zinc-700">
+              <div className="p-6 flex flex-col">
+                <div className="flex items-center gap-2 mb-2">
+                  <Clock className="w-5 h-5" />
+                  <div>
+                    <p className="font-semibold">每小时生产力</p>
+                    <p className="text-xs text-stone-500">24h 分布</p>
+                  </div>
                 </div>
-              </CardHeader>
-              <Divider />
-              <CardBody>
-                <ResponsiveContainer width="100%" height={300}>
+                <ResponsiveContainer width="100%" height={260}>
                   <BarChart data={hourlyData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="hour" />
-                    <YAxis />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: isDark ? '#1f2937' : '#fff',
-                        border: isDark ? '1px solid #374151' : '1px solid #e5e7eb',
-                      }}
-                      formatter={(value) => `${secondsToHours(Number(value || 0)).toFixed(2)}h`}
-                    />
-                    <Bar dataKey="duration" fill="#8884d8" name="时长(秒)" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis dataKey="hour" tick={{ fontSize: 12 }} />
+                    <YAxis tick={{ fontSize: 12 }} />
+                    <Tooltip wrapperClassName="glass" formatter={(value) => `${secondsToHours(Number(value || 0)).toFixed(2)}h`} />
+                    <Bar dataKey="duration" fill="#a78bfa" name="时长(秒)" radius={[6, 6, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
-              </CardBody>
-            </Card>
+              </div>
+            </div>
           </div>
 
           {/* 任务详细列表 */}
-          <Card>
-            <CardHeader className="flex gap-3">
-              <Target className="w-5 h-5" />
-              <div className="flex flex-col">
-                <p className="text-md font-semibold">任务详细统计</p>
-                <p className="text-small text-default-500">所有任务的时间分配</p>
+          <div className="bg-white dark:bg-zinc-800 rounded-xl shadow-xl border border-zinc-200 dark:border-zinc-700">
+            <div className="p-6 flex flex-col">
+              <div className="flex items-center gap-2 mb-3">
+                <Target className="w-5 h-5" />
+                <div>
+                  <p className="font-semibold">任务详细统计</p>
+                  <p className="text-xs text-stone-500">所有任务时间分配</p>
+                </div>
               </div>
-            </CardHeader>
-            <Divider />
-            <CardBody>
               <div className="space-y-3">
                 {taskStats.map((task, index) => (
                   <div key={index} className="flex items-center gap-4">
                     <div className="flex-1">
                       <div className="flex justify-between items-center mb-1">
                         <span className="font-medium">{task.taskTitle}</span>
-                        <span className="text-sm text-gray-600 dark:text-gray-400">
+                        <span className="text-sm text-stone-500">
                           {formatDuration(task.totalDuration)} ({task.sessionCount} 次)
                         </span>
                       </div>
-                      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                      <div className="w-full bg-gray-100 dark:bg-zinc-700 rounded-full h-2">
                         <div
-                          className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all"
+                          className="bg-gradient-to-r from-sky-400 via-fuchsia-400 to-amber-300 h-2 rounded-full transition-all"
                           style={{ width: `${task.percentage}%` }}
                         />
                       </div>
-                      <span className="text-xs text-gray-500 dark:text-gray-400">
-                        {task.percentage.toFixed(1)}%
-                      </span>
+                      <span className="text-xs text-stone-500">{task.percentage.toFixed(1)}%</span>
                     </div>
                   </div>
                 ))}
               </div>
-            </CardBody>
-          </Card>
+            </div>
+          </div>
 
           {/* GitHub 风格热力图 */}
-          <Card>
-            <CardHeader className="flex gap-3">
-              <Calendar className="w-5 h-5" />
-              <div className="flex flex-col">
-                <p className="text-md font-semibold">年度活动热力图</p>
-                <p className="text-small text-default-500">过去一年的专注习惯</p>
+          <div className="bg-white dark:bg-zinc-800 rounded-xl shadow-xl border border-zinc-200 dark:border-zinc-700">
+            <div className="p-6 flex flex-col">
+              <div className="flex items-center gap-2 mb-2">
+                <Calendar className="w-5 h-5" />
+                <div>
+                  <p className="font-semibold">年度活动热力图</p>
+                  <p className="text-xs text-stone-500">过去一年的专注习惯</p>
+                </div>
               </div>
-            </CardHeader>
-            <Divider />
-            <CardBody>
               <div className="overflow-x-auto">
                 <ActivityCalendar
                   data={heatmapData}
                   theme={{
-                    light: ['#ebedf0', '#9be9a8', '#40c463', '#30a14e', '#216e39'],
+                    light: ['#f4f4f5', '#c4f1be', '#7cd67f', '#4cbf5f', '#2b8a3e'],
                     dark: ['#161b22', '#0e4429', '#006d32', '#26a641', '#39d353'],
                   }}
                   colorScheme={isDark ? 'dark' : 'light'}
@@ -398,8 +326,8 @@ function StatsPage() {
                   }}
                 />
               </div>
-            </CardBody>
-          </Card>
+            </div>
+          </div>
         </>
       )}
     </div>

@@ -4,6 +4,7 @@ import { Button, Card, CardBody, Modal, ModalContent, ModalHeader, ModalBody, Mo
 import { Plus, Trash2, Clock, Edit3 } from 'lucide-react';
 import { formatDistance } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
+import EmptyState from '../components/EmptyState';
 import FocusTimer from '../components/FocusTimer';
 import ManageSessionModal from '../components/ManageSessionModal';
 import useAppStore from '../store/useAppStore';
@@ -193,20 +194,13 @@ export default function FocusPage() {
       {/* 空状态 - 添加记录提示 */}
       {recentSessions.length === 0 && (
         <Card className="glass-card">
-          <CardBody className="text-center py-8">
-            <Clock className="w-12 h-12 mx-auto mb-3 text-stone-300 dark:text-stone-600" />
-            <p className="text-stone-400 dark:text-stone-500 mb-3">
-              还没有专注记录
-            </p>
-            <Button
-              size="sm"
-              color="primary"
-              variant="flat"
-              startContent={<Plus size={16} />}
-              onPress={handleOpenAddSession}
-            >
-              添加首个记录
-            </Button>
+          <CardBody>
+            <EmptyState 
+              type="focus"
+              message="千里之行，始于足下"
+              actionLabel={focusTasks.length > 0 ? "开始专注" : undefined}
+              onAction={focusTasks.length > 0 ? () => window.scrollTo({ top: 0, behavior: 'smooth' }) : undefined}
+            />
           </CardBody>
         </Card>
       )}
@@ -243,4 +237,3 @@ export default function FocusPage() {
     </div>
   );
 }
-

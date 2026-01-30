@@ -5,6 +5,7 @@ import { Plus, FolderPlus, List, Grid3x3, Sun, Check } from 'lucide-react';
 import TodoItem from '../components/TodoItem';
 import EisenhowerMatrix from '../components/EisenhowerMatrix';
 import MyDaySuggestions from '../components/MyDaySuggestions';
+import EmptyState from '../components/EmptyState';
 import useAppStore from '../store/useAppStore';
 
 type ViewMode = 'list' | 'matrix';
@@ -180,16 +181,18 @@ export default function TodoPage() {
 
       {/* 待办列表或矩阵视图 */}
       {filteredTodos.length === 0 ? (
-        <div className="text-center py-20">
-          <div className="text-6xl mb-4">📝</div>
-          <p className="text-stone-400 dark:text-stone-500">
-            {filterMode === 'myday'
+        <EmptyState 
+          type="todo"
+          message={
+            filterMode === 'myday'
               ? '还没有添加任务到"我的一天"'
               : filterMode === 'completed'
               ? '这个分区还没有已完成的待办事项'
-              : '这个分区还没有待办事项'}
-          </p>
-        </div>
+              : '享受当下的宁静吧'
+          }
+          onAction={() => setIsModalOpen(true)}
+          actionLabel="添加待办"
+        />
       ) : viewMode === 'matrix' && filterMode !== 'completed' ? (
         <EisenhowerMatrix partition={selectedPartition} />
       ) : (
@@ -270,4 +273,3 @@ export default function TodoPage() {
     </div>
   );
 }
-

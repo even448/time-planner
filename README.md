@@ -236,6 +236,7 @@ time-planner-pwa/
 ## 👨‍💻 作者
 
 [@even448](https://github.com/even448)
+[@Frankyy12138](https://github.com/Frankyy12138)
 
 ## 🙏 致谢
 

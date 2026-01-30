@@ -6,10 +6,11 @@ import TodoPage from './pages/TodoPage';
 import FocusPage from './pages/FocusPage';
 import StatsPage from './pages/StatsPage';
 import SettingsPage from './pages/SettingsPage';
+import AuthPage from './pages/AuthPage';
 import useAppStore from './store/useAppStore';
 
 function App() {
-  const { settings } = useAppStore();
+  const { settings, currentUserId } = useAppStore();
 
   // 初始化主题
   useEffect(() => {
@@ -19,6 +20,10 @@ function App() {
       document.documentElement.classList.remove('dark');
     }
   }, [settings.theme]);
+
+  if (!currentUserId) {
+    return <AuthPage />;
+  }
 
   return (
     <Layout>

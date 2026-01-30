@@ -25,6 +25,13 @@ export interface TodoHistory {
   tag?: string; // Git-style commit tag
 }
 
+export interface User {
+  id: string;
+  username: string;
+  password: string; // stored locally; for demo purposes only
+  createdAt: string; // ISO string
+}
+
 export interface Todo {
   id: string;
   title: string;
@@ -79,6 +86,17 @@ export interface AppState {
   focusTasks: FocusTask[];
   focusSessions: FocusSession[];
   settings: AppSettings;
+  // Auth
+  users: User[];
+  currentUserId: string | null;
+  userData: Record<string, {
+    countdowns: Countdown[];
+    todos: Todo[];
+    partitions: string[];
+    focusTasks: FocusTask[];
+    focusSessions: FocusSession[];
+    settings: AppSettings;
+  }>;
   
   // Countdown Actions
   addCountdown: (countdown: Omit<Countdown, 'id' | 'createdAt' | 'archived'>) => void;
@@ -113,4 +131,9 @@ export interface AppState {
   // Settings Actions
   toggleTheme: () => void;
   updateSettings: (settings: Partial<AppSettings>) => void;
+
+  // Auth Actions
+  registerUser: (username: string, password: string) => { success: boolean; message?: string };
+  loginUser: (username: string, password: string) => { success: boolean; message?: string };
+  logoutUser: () => void;
 }
